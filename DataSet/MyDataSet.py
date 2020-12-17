@@ -24,7 +24,7 @@ class MyDataset(Dataset):
         annotations = []
         for rel_path in os.listdir(data_path + "Annotations"):
             annotation_path = data_path + "Annotations" + '/' + rel_path
-            img_path = data_path + "JPEGImages" + '/' + rel_path.replace(".xml",".jpg")
+            img_path = data_path + "JPEGImages" + '/' + rel_path.replace(".xml", ".jpg")
             imgs.append(img_path)
             annotations.append(annotation_path)
         self.imgs = imgs
@@ -59,7 +59,7 @@ class MyDataset(Dataset):
 
 if __name__ == '__main__':
     cwd = os.getcwd()
-    data_dir = os.path.join(os.path.join(cwd, os.pardir),os.pardir)
+    data_dir = os.path.join(os.path.join(cwd, os.pardir), os.pardir)
     my_data_path = os.path.join(data_dir, "data/face_mask/")
     dataset = MyDataset(my_data_path)
     print(len(dataset))
