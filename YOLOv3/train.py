@@ -48,7 +48,11 @@ if __name__ == "__main__":
 
     # If specified we start from checkpoint
     if pretrained_weights:
-        model.load_darknet_weights(weights_dir)
+        if opt.pretrained_weights.endswith(".pth"):
+            model.load_state_dict(torch.load(weights_dir))
+        else:
+            model.load_darknet_weights(weights_dir)
+
 
     # Get dataloader
     dataset = ListDataset(train_path, augment=True, multiscale=False,normalized_labels=False)

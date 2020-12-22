@@ -1,1 +1,4 @@
 /YOLOv3/weights/yolov3.weights
+/YOLOv3/logs/
+/YOLOv3/output/
+/YOLOv3/checkpoints/
