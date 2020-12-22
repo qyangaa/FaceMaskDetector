@@ -7,9 +7,10 @@ from PIL import Image
 import torch
 import torch.nn.functional as F
 
-from utils.augmentations import horisontal_flip
+from .augmentations import horisontal_flip
 from torch.utils.data import Dataset
 import torchvision.transforms as transforms
+import xml.etree.ElementTree as ET
 
 
 def pad_to_square(img, pad_value):
@@ -57,14 +58,17 @@ class ImageFolder(Dataset):
 
 
 class ListDataset(Dataset):
-    def __init__(self, list_path, img_size=416, augment=True, multiscale=True, normalized_labels=True):
-        with open(list_path, "r") as file:
-            self.img_files = file.readlines()
+    label2idx = dict({'face_mask': 1, 'face': 0})
+    idx2label = dict({'0': 'face', '1': 'face_mask'})
+    def __init__(self, data_path, img_size=416, augment=True, multiscale=True, normalized_labels=False):
+        self.img_files = []
+        self.annotations = []
+        for rel_path in os.listdir(data_path + "Annotations"):
+            annotation_path = data_path + "Annotations" + '/' + rel_path
+            img_path = data_path + "JPEGImages" + '/' + rel_path.replace(".xml", ".jpg")
+            self.img_files.append(img_path)
+            self.annotations.append(annotation_path)
 
-        self.label_files = [
-            path.replace("images", "labels").replace(".png", ".txt").replace(".jpg", ".txt")
-            for path in self.img_files
-        ]
         self.img_size = img_size
         self.max_objects = 100
         self.augment = augment
@@ -80,7 +84,7 @@ class ListDataset(Dataset):
         #  Image
         # ---------
 
-        img_path = self.img_files[index % len(self.img_files)].rstrip()
+        img_path = self.img_files[index]
 
         # Extract image as PyTorch tensor
         img = transforms.ToTensor()(Image.open(img_path).convert('RGB'))
@@ -100,13 +104,24 @@ class ListDataset(Dataset):
         #  Label
         # ---------
 
-        label_path = self.label_files[index % len(self.img_files)].rstrip()
+        label_path = self.annotations[index]
 
         targets = None
         if os.path.exists(label_path):
+            annotation = ET.parse(label_path).getroot()
+            text_label = annotation.find('object').find('name').text
+            label = ListDataset.label2idx[text_label]
+            bndbox = annotation.find('object').find('bndbox')
+            width = float(annotation.find('size').find('width').text)
+            height = float(annotation.find('size').find('height').text)
+            xmin = float(bndbox.find('xmin').text) / width
+            ymin = float(bndbox.find('ymin').text) / height
+            xmax = float(bndbox.find('xmax').text) / width
+            ymax = float(bndbox.find('ymax').text) / height
+
             # label: [class, x1, y1, x2, y2]
             # e.g.: 16 0.606688 0.341381 0.544156 0.510000 (normalized)
-            boxes = torch.from_numpy(np.loadtxt(label_path).reshape(-1, 5))
+            boxes = torch.from_numpy(np.array([label,xmin, ymin, xmax, ymax]).reshape(-1, 5))
             # Extract coordinates for unpadded + unscaled image
             x1 = w_factor * (boxes[:, 1] - boxes[:, 3] / 2)
             y1 = h_factor * (boxes[:, 2] - boxes[:, 4] / 2)
@@ -151,3 +166,16 @@ class ListDataset(Dataset):
 
     def __len__(self):
         return len(self.img_files)
+
+if __name__ == '__main__':
+    cwd = os.getcwd()
+    data_dir = os.path.join(cwd, os.pardir)
+    data_dir = os.path.join(data_dir, os.pardir)
+    data_dir = os.path.join(data_dir, os.pardir)
+    my_data_path = os.path.join(data_dir, "data/face_mask/")
+    dataset = ListDataset(my_data_path)
+    print(len(dataset))
+    img, label, bbox = dataset[0]
+    print(label)
+    print(bbox)
+    print(img)

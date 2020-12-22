@@ -31,7 +31,7 @@ def get_input(path):
 
 
 cwd = os.getcwd()
-config_dir = os.path.join(cwd, "config/yolov3.cfg")
+config_dir = os.path.join(cwd, "config/yolov3_face_mask.cfg")
 weights_dir = os.path.join(cwd, "weights/yolov3.weights")
 path = "utils/dog-cycle-car.png"
 

@@ -405,7 +405,7 @@ if __name__ == '__main__':
 
     cwd = os.getcwd()
     parent_dir = os.path.join(cwd, os.pardir)
-    config_dir = os.path.join(parent_dir, "config/yolov3.cfg")
+    config_dir = os.path.join(parent_dir, "config/yolov3_face_mask.cfg")
     weights_dir = os.path.join(parent_dir, "weights/yolov3.weights")
 
     # Test without preload weights
