@@ -1,4 +1,5 @@
 import glob
+import pdb
 import random
 import os
 import sys
@@ -43,7 +44,7 @@ class ImageFolder(Dataset):
         self.img_size = img_size
 
     def __getitem__(self, index):
-        img_path = self.files[index % len(self.files)]
+        img_path = self.files[index % len(self.files)].rstrip()
         # Extract image as PyTorch tensor
         img = transforms.ToTensor()(Image.open(img_path))
         # Pad to square resolution
@@ -66,8 +67,12 @@ class ListDataset(Dataset):
         for rel_path in os.listdir(data_path + "Annotations"):
             annotation_path = data_path + "Annotations" + '/' + rel_path
             img_path = data_path + "JPEGImages" + '/' + rel_path.replace(".xml", ".jpg")
-            self.img_files.append(img_path)
-            self.annotations.append(annotation_path)
+            annotation = ET.parse(annotation_path).getroot()
+            object = annotation.find('object')
+            if object is not None:
+                # some annotations are empty
+                self.img_files.append(img_path)
+                self.annotations.append(annotation_path)
 
         self.img_size = img_size
         self.max_objects = 100
@@ -77,14 +82,16 @@ class ListDataset(Dataset):
         self.min_size = self.img_size - 3 * 32
         self.max_size = self.img_size + 3 * 32
         self.batch_count = 0
+        # print(self.annotations[715:716])
+        # pdb.set_trace()
 
     def __getitem__(self, index):
 
         # ---------
         #  Image
         # ---------
-
-        img_path = self.img_files[index]
+        annotation = ET.parse(self.annotations[index]).getroot().find('object').find('name').text
+        img_path = self.img_files[index % len(self.img_files)].rstrip()
 
         # Extract image as PyTorch tensor
         img = transforms.ToTensor()(Image.open(img_path).convert('RGB'))

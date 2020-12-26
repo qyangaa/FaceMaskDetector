@@ -1,5 +1,6 @@
 from __future__ import division
 import math
+import pdb
 import time
 import tqdm
 import torch
@@ -43,7 +44,6 @@ def rescale_boxes(boxes, current_dim, original_shape):
     unpad_h = current_dim - pad_y
     unpad_w = current_dim - pad_x
     # Rescale bounding boxes to dimension of original image
-    print(boxes)
     boxes[:, 0] = ((boxes[:, 0] - pad_x // 2) / unpad_w) * orig_w
     boxes[:, 1] = ((boxes[:, 1] - pad_y // 2) / unpad_h) * orig_h
     boxes[:, 2] = ((boxes[:, 2] - pad_x // 2) / unpad_w) * orig_w
@@ -293,9 +293,10 @@ def build_targets(pred_boxes, pred_cls, target, anchors, ignore_thres):
     # normalized center and size of ground truth boxes:
     # target = [[sample_id, class, center_x/img_w, center_y/img_h, w/img_w, h/img_h]...]
     target_boxes = target[:, 2:6] * nG  # * grid_size
-    # TODO: gxy are in [0,1] , not [0, grid_size], how does it make sense?
-    gxy = target_boxes[:, :2]  # center_x/img_w, center_y/img_h
-    print("gxy [check whether it is in[0,13]: ", gxy)
+    # gxy is normalized to [0:grid_size]
+
+    gxy = torch.clamp(target_boxes[:, :2], 0, 12.99)  # center_x/img_w, center_y/img_h
+
     gwh = target_boxes[:, 2:]  # w/img_w, h/img_h
     # Get a list of ious
     # Input anchors are scaled anchors:
@@ -315,7 +316,7 @@ def build_targets(pred_boxes, pred_cls, target, anchors, ignore_thres):
     # Set noobj mask to zero where iou exceeds ignore threshold
     # anchors with good but not best iou are still considered to capture the object
     for i, anchor_ious in enumerate(ious.t()):
-        noobj_mask[b[i], anchor_ious > ignore_thres, gj[i], gi[i]] = 0
+            noobj_mask[b[i], anchor_ious > ignore_thres, gj[i], gi[i]] = 0
 
     # x,y in normalized image coordinate
     tx[b, best_n, gj, gi] = gx - gx.floor()

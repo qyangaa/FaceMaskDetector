@@ -31,22 +31,37 @@ def get_input(path):
 
 
 cwd = os.getcwd()
-config_dir = os.path.join(cwd, "config/yolov3_face_mask.cfg")
-weights_dir = os.path.join(cwd, "weights/yolov3.weights")
-path = "utils/dog-cycle-car.png"
+# config_dir = os.path.join(cwd, "config/yolov3_face_mask.cfg")
+config_dir = os.path.join(cwd, "config/yolov3.cfg")
+
+# pretrained_weights = os.path.join(cwd, "checkpoints/yolov3_ckpt_1.pth")
+pretrained_weights = os.path.join(cwd, "weights/yolov3.weights")
+
+data_dir = os.path.join(cwd, os.pardir)
+data_dir = os.path.join(data_dir, os.pardir)
+path = os.path.join(data_dir, "data/face_mask/JPEGImages/test_00002991.jpg")
+# path = os.path.join(data_dir, "data/face_mask/JPEGImages/1_Handshaking_Handshaking_1_35.jpg")
 
 model = Darknet(config_dir).to(device)
-model.load_darknet_weights(weights_dir)
+
+if pretrained_weights:
+    if pretrained_weights.endswith(".pth"):
+        model.load_state_dict(torch.load(pretrained_weights))
+    else:
+        model.load_darknet_weights(pretrained_weights)
+
 model.eval()
 input = get_input(path)
 input = input.to(device)
 pred = model(input)
-detections = non_max_suppression(pred, 0.8)[0]
+detections = non_max_suppression(pred, 0.5)[0]
+print(detections)
 
 img = np.array(Image.open(path))
 plt.figure()
 fig, ax = plt.subplots(1)
 ax.imshow(img)
+
 
 detections = rescale_boxes(detections, 416, img.shape[:2])  # img.shape = (452, 602, 3)
 unique_labels = detections[:, -1].cpu().unique()
@@ -65,7 +80,7 @@ for x1, y1, x2, y2, conf, cls_conf, cls_pred in detections:
     plt.text(
         x1,
         y1,
-        s = int(cls_pred),
+        s=int(cls_pred),
         color="white",
         verticalalignment="top",
         bbox={"color": color, "pad": 0}

@@ -1,3 +1,5 @@
+import pdb
+
 import cv2
 import torch
 import torch.nn as nn
@@ -212,7 +214,8 @@ class YOLOLayer(nn.Module):
         if targets is None:  # not computing loss
             return output, 0
         else:
-            # convert ground truth to targets for later loss calculation
+            #try:
+                # convert ground truth to targets for later loss calculation
             iou_scores, class_mask, obj_mask, noobj_mask, tx, ty, tw, th, tcls, tconf = build_targets(
                 pred_boxes=pred_boxes,
                 pred_cls=pred_cls,
@@ -220,6 +223,8 @@ class YOLOLayer(nn.Module):
                 anchors=self.scaled_anchors,
                 ignore_thres=self.ignore_thres,
             )
+            #except:
+            #    pdb.set_trace()
 
             # Loss : only calculate loss for pixels with object, ignoring negative spaces
             loss_x = self.mse_loss(x[obj_mask], tx[obj_mask])  # x: real center x, tx: normalized ground truth x
