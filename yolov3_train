@@ -1,0 +1,9 @@
+#!/bin/bash
+train_dir=/home/arky/files/CV/yolo/PyTorch-YOLOv3/train.py
+epochs=20
+model_def="../../FaceMaskDetector/YOLOv3/yolov3_face_mask.cfg"
+pretrained_weights="weights/yolov3.weights"
+data_config="config/face_mask.data"
+batch_size=4
+
+python3 train_dir --epochs $epochs --batch_size $batch_size --model_def $model_def --pretrained_weights $pretrained_weights --data_config $data_config
